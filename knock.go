@@ -77,13 +77,14 @@ func checkout(args []string) (req Required, opt Optional, err error) {
 				// just dropping wrong keys
 				opt.knockDelay, opt.knockMs, err = timeout(v)
 				if err != nil {
-					log.Printf("invalid -d key dropped\n")
+					log.Printf("invalid -d key is dropped\n")
 					continue
 				}
 			case 'c':
+				// and here too
 				opt.connDelay, opt.connMs, err = timeout(v)
 				if err != nil {
-					log.Printf("invalid -c key dropped\n")
+					log.Printf("invalid -c key is dropped\n")
 					continue
 				}
 			default:
@@ -98,10 +99,20 @@ func checkout(args []string) (req Required, opt Optional, err error) {
 		showHelp()
 		os.Exit(0)
 	}
+	// some string
 	req.host = tail[0]
+	// is this string with IP valid?
 	ip := net.ParseIP(req.host)
 	if ip == nil {
-		return Required{}, Optional{}, errors.New("invalid IP")
+		// no. maybe it's hostname?
+		ipAddr, err := net.ResolveIPAddr("ip", req.host)
+		if err != nil {
+			// no luck
+			return Required{}, Optional{}, errors.New("invalid IP or hostname")
+		} else {
+			// replacing the name by resolved ip
+			req.host = ipAddr.String()
+		}
 	}
 	for _, port := range tail[1:] {
 		n, err := strconv.Atoi(port)
